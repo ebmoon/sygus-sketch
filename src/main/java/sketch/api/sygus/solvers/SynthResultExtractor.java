@@ -93,13 +93,8 @@ public class SynthResultExtractor extends SymbolTableVisitor {
                 List<Statement> innerStmts = ((StmtBlock) stmt).getStmts();
                 // Handle variable declaration which appears before choice block
                 if (innerStmts.size() == 1 && innerStmts.get(0) instanceof StmtBlock) {
-                    StmtBlock innerBlock = (StmtBlock) innerStmts.get(0);
-                    Pair<String, Integer> varDeclHint = varDeclList.get(varDeclCnt++);
-                    String nonterminalID = varDeclHint.getFirst();
-                    String varID = String.format("var_%s_%d", nonterminalID, varDeclHint.getSecond());
-
-                    SygusExpression innerExpr = extractExpression(productionMap.get(nonterminalID), innerBlock);
-                    intermediateVars.put(varID, innerExpr);
+                    handleVarDecls(intermediateVars, varDeclCnt, varDeclList, innerStmts);
+                    varDeclCnt++;
                 }
                 // First choice block found
                 else if (innerStmts.get(innerStmts.size() - 1) instanceof StmtIfThen) {
@@ -128,13 +123,8 @@ public class SynthResultExtractor extends SymbolTableVisitor {
                 List<Statement> block = ((StmtBlock) ((StmtIfThen) stmt).getCons()).getStmts();
                 // Handle variable declaration which appears before choice block
                 if (block.size() == 1 && block.get(0) instanceof StmtBlock) {
-                    StmtBlock innerBlock = (StmtBlock) block.get(0);
-                    Pair<String, Integer> varDeclHint = varDeclList.get(varDeclCnt++);
-                    String nonterminalID = varDeclHint.getFirst();
-                    String varID = String.format("var_%s_%d", nonterminalID, varDeclHint.getSecond());
-
-                    SygusExpression innerExpr = extractExpression(productionMap.get(nonterminalID), innerBlock);
-                    intermediateVars.put(varID, innerExpr);
+                    handleVarDecls(intermediateVars, varDeclCnt, varDeclList, block);
+                    varDeclCnt++;
                 }
                 // Choice block found
                 else {
@@ -149,6 +139,16 @@ public class SynthResultExtractor extends SymbolTableVisitor {
         }
 
         throw new OutputParseException("Failed to parse generator choice");
+    }
+
+    private void handleVarDecls(Map<String, SygusExpression> intermediateVars, int varDeclCnt, List<Pair<String, Integer>> varDeclList, List<Statement> block) {
+        StmtBlock innerBlock = (StmtBlock) block.get(0);
+        Pair<String, Integer> varDeclHint = varDeclList.get(varDeclCnt);
+        String nonterminalID = varDeclHint.getFirst();
+        String varID = String.format("var_%s_%d", nonterminalID, varDeclHint.getSecond());
+
+        SygusExpression innerExpr = extractExpression(productionMap.get(nonterminalID), innerBlock);
+        intermediateVars.put(varID, innerExpr);
     }
 
     // For debugging
@@ -178,34 +178,6 @@ public class SynthResultExtractor extends SymbolTableVisitor {
         Type t = star.getType();
         return ((ExprConstInt) oracle.popValueForNode(star.getDepObject(0), t)).getVal();
     }
-
-//    private int extractHoleValueFromBlock(
-//            List<Statement> block,
-//            Map<String, SygusExpression> intermediateVars,
-//            List<Pair<String, Integer>> varDeclList
-//    ) {
-//        List<StmtIfThen> ifThenStmts = block.stream()
-//                .filter(innerStmt -> (innerStmt instanceof StmtIfThen))
-//                .map(innerStmt -> (StmtIfThen) innerStmt)
-//                .collect(Collectors.toList());
-//
-//        // Handle variable declaration which appears before choice block
-//        int cnt = 0;
-//        for (StmtIfThen stmtInner : ifThenStmts.subList(0, ifThenStmts.size() - 1)) {
-//            StmtBlock innerBlock = (StmtBlock) ((StmtBlock) stmtInner.getCons()).getStmts().get(0);
-//            Pair<String, Integer> varDeclHint = varDeclList.get(cnt++);
-//            String nonterminalID = varDeclHint.getFirst();
-//            String varID = String.format("var_%s_%d", nonterminalID, varDeclHint.getSecond());
-//
-//            SygusExpression innerExpr = extractExpression(productionMap.get(nonterminalID), innerBlock);
-//            intermediateVars.put(varID, innerExpr);
-//        }
-//
-//        StmtIfThen stmt = ifThenStmts.get(ifThenStmts.size() - 1);
-//        ExprStar star = (ExprStar) stmt.getCond();
-//        Type t = star.getType();
-//        return ((ExprConstInt) oracle.popValueForNode(star.getDepObject(0), t)).getVal();
-//    }
 
     private SygusExpression constructExpressionFromChoice(
             Production prod,
