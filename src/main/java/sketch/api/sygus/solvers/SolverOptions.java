@@ -25,6 +25,8 @@ public class SolverOptions extends SketchOptions {
         this.backendArgs = parser.backendArgs;
         this.nativeArgs = parser.nativeArgs;
 
+        this.bndOpts.cbits = 1;
+
         // actions
         argsAsList = Arrays.asList(args);
         sketchFile = null;

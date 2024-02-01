@@ -1,7 +1,7 @@
 package sketch.api.sygus.util.exception;
 
 /**
- * Exception from constructing sketch query
+ * Exception from parsing sketch output
  *
  * @author Kanghee Park &lt;khpark@cs.wisc.edu&gt;
  */
